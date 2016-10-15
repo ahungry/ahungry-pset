@@ -1,0 +1,9 @@
+*#*#
+*.#*
+*.o
+bin
+/autom4te.cache/
+/Makefile
+/*.log
+/config.h
+/config.status
