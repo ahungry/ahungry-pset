@@ -71,7 +71,7 @@ foo powerset (foo *foo_ptr, int nest)
       // If we have an unkeyed list item, just grab first element and quit matching on others
       if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
         {
-          printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
+          //printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
 
           result.list[i + 1] = NULL;
           return result;
@@ -85,14 +85,6 @@ foo powerset (foo *foo_ptr, int nest)
   return result;
 }
 
-void pindent (int count)
-{
-  for (int i = 0; i < count; i++)
-    {
-      printf (" ");
-    }
-}
-
 /**
  * Recurse across the struct and format contents
  *
@@ -102,37 +94,37 @@ void pindent (int count)
  */
 void dump (foo *foo_ptr, int nest)
 {
-  printf ("\n");
-  pindent (nest);
-
   if (foo_ptr->type == SCALAR)
     {
-      printf ("sstruct [ k: [%s], v: [%s], t: [%d]\n",
-              foo_ptr->key,
-              foo_ptr->val,
-              foo_ptr->type
-              );
+      printf ("\"%s\"", foo_ptr->val);
     }
 
   if (foo_ptr->type == LIST)
     {
-      printf ("lstruct [ k: [%s], v: [%s], t: [%d]\n",
-              foo_ptr->key,
-              foo_ptr->val,
-              foo_ptr->type
-              );
+      //printf ("{");
+      printf ("{\"%s\": ", foo_ptr->key);
 
-      pindent (nest);
-      printf ("Elements:\n");
+      if (foo_ptr->lsize > 1)
+        {
+          printf ("[");
+        }
 
       for (unsigned i = 0; i < foo_ptr->lsize; i++)
-        //for (int i = 0u; foo_ptr->list[i]; i++)
         {
-          if (foo_ptr->list[i] != NULL)
+          dump (foo_ptr->list[i], nest * 1 + 2);
+
+          if (i + 1 < foo_ptr->lsize)
             {
-              dump (foo_ptr->list[i], nest + 2);
+              printf (",");
             }
         }
+
+      if (foo_ptr->lsize > 1)
+        {
+          printf ("]");
+        }
+
+      printf ("}");
     }
 }
 
@@ -145,8 +137,8 @@ void dump (foo *foo_ptr, int nest)
  */
 int main (int argc, char *argv[])
 {
-  printf ("Running %s, We saw %d args...\n", argv[0], argc);
-  printf ("Scalar: %d, List: %d", SCALAR, LIST);
+  //printf ("Running %s, We saw %d args...\n", argv[0], argc);
+  //printf ("Scalar: %d, List: %d", SCALAR, LIST);
 
   // Set up the equivalent of the following PHP array:
   // $arr = ['a' => [1, 2], 'b' => [3, 4]]
@@ -158,19 +150,19 @@ int main (int argc, char *argv[])
   foo b = { LIST, "b", "", { &b1, &b2 }, 2, 0 };
   foo foo1 = { LIST, "result", "", { &a, &b }, 2, 0 };
 
-  printf ("k: %s, v: %s\n", foo1.list[0]->key, foo1.list[0]->val);
+  //printf ("k: %s, v: %s\n", foo1.list[0]->key, foo1.list[0]->val);
 
   foo *foo_ptr = &foo1;
   //foo result = { LIST, "\0", "", { NULL }, NULL };
   foo result;
 
-  printf ("Its loopin time\n");
+  //printf ("Its loopin time\n");
   //dump (foo_ptr, 0);
 
-  printf ("Feel the power\n");
+  //printf ("Feel the power\n");
   result = powerset (foo_ptr, 0);
 
-  printf ("K: %s V: %s\n", result.key, result.val);
+  //printf ("K: %s V: %s\n", result.key, result.val);
 
   /* printf ("Afterwards, we end up with....\n"); */
   /* printf ("k: %s v: %s\n", result.key, result.val); */
@@ -179,8 +171,8 @@ int main (int argc, char *argv[])
   /* printf ("rl2 - k: %s v: %s\n", result.list[1]->key, result.list[1]->val); */
   /* printf ("rl1b - k: %s v: %s\n", result.list[1]->list[0]->key, result.list[1]->list[0]->val); */
   //dump (&result, 0);
-  printf ("DUMP 2 TIME\n\n");
-  dump (&result, 1u);
+  //printf ("DUMP 2 TIME\n\n");
+  dump (&result, 0);
 
   return 0;
   printf ("Then in the original object...\n");
