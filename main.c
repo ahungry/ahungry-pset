@@ -36,34 +36,102 @@ typedef struct foo
   char key[64];
   char val[64];
   struct foo *list[5];
+  size_t lsize;
+  size_t iter;
 } foo;
 
 /**
  * Recurse across the struct and format contents
  *
- * @param foo* foo_ptr The pointer to the foo structure
+ * @param foo *foo_ptr The pointer to the foo structure
  * @param int nest The counter for how far to indent
  * @return void
  */
-void dump (foo* foo_ptr, int nest)
+foo powerset (foo *foo_ptr, int nest)
 {
   int i;
-  for (i = 0u; foo_ptr->list[i]; i++)
-    {
-      for (int c = 0; c < nest; c++)
-        {
-          printf (" ");
-        }
+  foo result;
 
-      if (foo_ptr->list[i]->type == SCALAR)
+  // Copy our pass in
+  strcpy (result.key, foo_ptr->key);
+  strcpy (result.val, foo_ptr->val);
+  result.type = foo_ptr->type;
+  result.lsize = 0;
+  result.iter = 0;
+
+  for (i = foo_ptr->iter; foo_ptr->list[i]; i++)
+    {
+      // Copy the list element over
+      result.list[i] = foo_ptr->list[i];
+      result.lsize++;
+
+      // Increment which node we're on in original setup
+      foo_ptr->iter++;
+
+      // If we have an unkeyed list item, just grab first element and quit matching on others
+      if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
         {
-          printf ("'%s' => '%s',\n", foo_ptr->list[i]->key, foo_ptr->list[i]->val);
+          printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
+
+          result.list[i + 1] = NULL;
+          return result;
         }
       else
         {
-          printf ("'%s' => [\n", foo_ptr->list[i]->key);
-          dump (foo_ptr->list[i], nest + 2);
-          printf ("],\n");
+          *result.list[i] = powerset (foo_ptr->list[i], nest + 2);//->list[i]);
+        }
+    }
+
+  return result;
+}
+
+void pindent (int count)
+{
+  for (int i = 0; i < count; i++)
+    {
+      printf (" ");
+    }
+}
+
+/**
+ * Recurse across the struct and format contents
+ *
+ * @param foo *foo_ptr The pointer to the foo structure
+ * @param int nest The counter for how far to indent
+ * @return void
+ */
+void dump (foo *foo_ptr, int nest)
+{
+  printf ("\n");
+  pindent (nest);
+
+  if (foo_ptr->type == SCALAR)
+    {
+      printf ("sstruct [ k: [%s], v: [%s], t: [%d]\n",
+              foo_ptr->key,
+              foo_ptr->val,
+              foo_ptr->type
+              );
+    }
+
+  if (foo_ptr->type == LIST)
+    {
+      printf ("lstruct [ k: [%s], v: [%s], t: [%d]\n",
+              foo_ptr->key,
+              foo_ptr->val,
+              foo_ptr->type
+              );
+
+      pindent (nest);
+      printf ("Elements:\n");
+
+      for (unsigned i = 0; i < foo_ptr->lsize; i++)
+        //for (int i = 0u; foo_ptr->list[i]; i++)
+        {
+          if (foo_ptr->list[i] != NULL)
+            {
+              dump (foo_ptr->list[i], nest + 2);
+            }
         }
     }
 }
@@ -82,20 +150,41 @@ int main (int argc, char *argv[])
 
   // Set up the equivalent of the following PHP array:
   // $arr = ['a' => [1, 2], 'b' => [3, 4]]
-  foo a2 = { SCALAR, "\0", "2", { NULL } };
-  foo a1 = { SCALAR, "\0", "1", { NULL } };
-  foo b2 = { SCALAR, "\0", "4", { NULL } };
-  foo b1 = { SCALAR, "\0", "3", { NULL } };
-  foo a = { LIST, "a", "", { &a1, &a2 } };
-  foo b = { LIST, "b", "", { &b1, &b2 } };
-  foo foo1 = { LIST, "\0", "", { &a, &b } };
+  foo a2 = { SCALAR, "\0", "2", { NULL }, 0, 0 };
+  foo a1 = { SCALAR, "\0", "1", { NULL }, 0, 0 };
+  foo b2 = { SCALAR, "\0", "4", { NULL }, 0, 0 };
+  foo b1 = { SCALAR, "\0", "3", { NULL }, 0, 0 };
+  foo a = { LIST, "a", "", { &a1, &a2 }, 2, 0 };
+  foo b = { LIST, "b", "", { &b1, &b2 }, 2, 0 };
+  foo foo1 = { LIST, "result", "", { &a, &b }, 2, 0 };
 
   printf ("k: %s, v: %s\n", foo1.list[0]->key, foo1.list[0]->val);
 
   foo *foo_ptr = &foo1;
+  //foo result = { LIST, "\0", "", { NULL }, NULL };
+  foo result;
 
   printf ("Its loopin time\n");
-  dump (foo_ptr, 0);
+  //dump (foo_ptr, 0);
+
+  printf ("Feel the power\n");
+  result = powerset (foo_ptr, 0);
+
+  printf ("K: %s V: %s\n", result.key, result.val);
+
+  /* printf ("Afterwards, we end up with....\n"); */
+  /* printf ("k: %s v: %s\n", result.key, result.val); */
+  /* printf ("rl1 - k: %s v: %s t: %d\n", result.list[0]->key, result.list[0]->val, result.list[0]->type); */
+  /* printf ("rl1a - k: %s v: %s t: %d\n", result.list[0]->list[0]->key, result.list[0]->list[0]->val, result.list[0]->list[0]->type); */
+  /* printf ("rl2 - k: %s v: %s\n", result.list[1]->key, result.list[1]->val); */
+  /* printf ("rl1b - k: %s v: %s\n", result.list[1]->list[0]->key, result.list[1]->list[0]->val); */
+  //dump (&result, 0);
+  printf ("DUMP 2 TIME\n\n");
+  dump (&result, 1u);
+
+  return 0;
+  printf ("Then in the original object...\n");
+  //dump (foo_ptr, 0);
 
   return 0;
 }
