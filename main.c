@@ -37,7 +37,7 @@ typedef struct foo
   char val[64];
   struct foo *list[5];
   size_t lsize;
-  size_t iter;
+  int iter;
 } foo;
 
 /**
@@ -47,7 +47,7 @@ typedef struct foo
  * @param int nest The counter for how far to indent
  * @return void
  */
-foo powerset (foo *foo_ptr, int nest)
+foo powerset (foo *foo_ptr, int iter)
 {
   int i;
   foo result;
@@ -59,26 +59,23 @@ foo powerset (foo *foo_ptr, int nest)
   result.lsize = 0;
   result.iter = 0;
 
-  for (i = foo_ptr->iter; foo_ptr->list[i]; i++)
+  for (i = 0u; foo_ptr->list[i]; i++)
     {
       // Copy the list element over
       result.list[i] = foo_ptr->list[i];
       result.lsize++;
 
-      // Increment which node we're on in original setup
-      foo_ptr->iter++;
-
       // If we have an unkeyed list item, just grab first element and quit matching on others
       if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
         {
-          //printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
-
+          printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
           result.list[i + 1] = NULL;
+          foo_ptr->iter = iter;
           return result;
         }
       else
         {
-          *result.list[i] = powerset (foo_ptr->list[i], nest + 2);//->list[i]);
+          *result.list[i] = powerset (foo_ptr->list[i], iter + 1);//->list[i]);
         }
     }
 
@@ -154,13 +151,18 @@ int main (int argc, char *argv[])
 
   foo *foo_ptr = &foo1;
   //foo result = { LIST, "\0", "", { NULL }, NULL };
-  foo result;
 
   //printf ("Its loopin time\n");
   //dump (foo_ptr, 0);
 
   //printf ("Feel the power\n");
+  foo result;
   result = powerset (foo_ptr, 0);
+  dump (&result, 0);
+
+  foo result2;
+  result2 = powerset (foo_ptr, 0);
+  dump (&result2, 0);
 
   //printf ("K: %s V: %s\n", result.key, result.val);
 
@@ -172,7 +174,6 @@ int main (int argc, char *argv[])
   /* printf ("rl1b - k: %s v: %s\n", result.list[1]->list[0]->key, result.list[1]->list[0]->val); */
   //dump (&result, 0);
   //printf ("DUMP 2 TIME\n\n");
-  dump (&result, 0);
 
   return 0;
   printf ("Then in the original object...\n");
