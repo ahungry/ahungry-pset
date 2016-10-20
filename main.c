@@ -42,7 +42,7 @@ typedef struct foo
 
 void clone (foo *foo_ptr, foo *copy);
 void dump (foo *foo_ptr, int nest);
-foo powerset (foo *foo_ptr, int iter);
+foo powerset (foo *foo_ptr);
 
 /**
  * Copy one recursive struct into another
@@ -120,7 +120,7 @@ void dump (foo *foo_ptr, int nest)
  * @param int nest The counter for how far to indent
  * @return void
  */
-foo powerset (foo *foo_ptr, int iter)
+foo powerset (foo *foo_ptr)
 {
   int i;
   foo result;
@@ -132,29 +132,28 @@ foo powerset (foo *foo_ptr, int iter)
   result.lsize = 0;
   result.iter = 0;
 
-  for (i = 0u; foo_ptr->list[i]; i++)
+  int j;
+  for (i = foo_ptr->iter, j = 0; i < (int) foo_ptr->lsize; i++, j++)//foo_ptr->list[i]; i++)
     {
       // Copy the list element over
-      // WOOPS this is linking the elements
       foo copy;
       foo *copyp = &copy;
       clone (foo_ptr->list[i], copyp);
-      result.list[i] = malloc (sizeof (foo));
-      *result.list[i] = *copyp;
-      //result.list[i] = foo_ptr->list[i];
+      result.list[j] = malloc (sizeof (foo));
+      *result.list[j] = *copyp;
       result.lsize++;
 
       // If we have an unkeyed list item, just grab first element and quit matching on others
       if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
         {
           //printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
-          result.list[i + 1] = NULL;
-          foo_ptr->iter = iter;
+          //printf ("FOUND ITER : %d\n", foo_ptr->iter);
+          foo_ptr->iter++;
           return result;
         }
       else if (foo_ptr->list[i]->type == LIST)
         {
-          *result.list[i] = powerset (foo_ptr->list[i], iter + 1);//->list[i]);
+          *result.list[j] = powerset (foo_ptr->list[i]);//->list[i]);
         }
     }
 
@@ -193,7 +192,7 @@ int main (int argc, char *argv[])
   printf ("\n\nThen we clone it:\n");
   dump (cloned_ptr, 0);
 
-  result = powerset (foo_ptr, 0);
+  result = powerset (foo_ptr);
 
   printf ("\n\nGenerates result:\n");
   dump (&result, 0);
@@ -204,15 +203,11 @@ int main (int argc, char *argv[])
   printf ("\n\nIn clone:\n");
   dump (cloned_ptr, 0);
 
-  //printf ("Its top value is: %s", cloned_ptr->list[0]->key);
-
-  printf ("\n\n");
-  return 0;
-
   foo result2;
-  result2 = powerset (foo_ptr, 0);
-  dump (&result2, 0);
+  result2 = powerset (foo_ptr);
 
+  printf ("\n\nSecond result set:\n");
+  dump (&result2, 0);
 
   return 0;
 }
