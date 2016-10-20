@@ -40,47 +40,34 @@ typedef struct foo
   int iter;
 } foo;
 
+void clone (foo *foo_ptr, foo *copy);
+void dump (foo *foo_ptr, int nest);
+foo powerset (foo *foo_ptr, int iter);
+
 /**
- * Recurse across the struct and format contents
- *
- * @param foo *foo_ptr The pointer to the foo structure
- * @param int nest The counter for how far to indent
- * @return void
+ * Copy one recursive struct into another
  */
-foo powerset (foo *foo_ptr, int iter)
+void clone (foo *foo_ptr, foo *copy)
 {
-  int i;
-  foo result;
-
   // Copy our pass in
-  strcpy (result.key, foo_ptr->key);
-  strcpy (result.val, foo_ptr->val);
-  result.type = foo_ptr->type;
-  result.lsize = 0;
-  result.iter = 0;
+  strcpy (copy->key, foo_ptr->key);
+  strcpy (copy->val, foo_ptr->val);
+  copy->type = foo_ptr->type;
+  copy->lsize = 0;
+  copy->iter = 0;
 
-  for (i = 0u; foo_ptr->list[i]; i++)
+  // Deep copy all the elements
+  for (unsigned i = 0u; i < foo_ptr->lsize;  i++)
     {
-      // Copy the list element over
-      // WOOPS this is linking the elements
-      result.list[i] = foo_ptr->list[i];
-      result.lsize++;
+      foo nfoo;
+      foo *nfp = &nfoo;
+      copy->lsize++;
 
-      // If we have an unkeyed list item, just grab first element and quit matching on others
-      if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
-        {
-          //printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
-          result.list[i + 1] = NULL;
-          foo_ptr->iter = iter;
-          return result;
-        }
-      else if (foo_ptr->list[i]->type == LIST)
-        {
-          *result.list[i] = powerset (foo_ptr->list[i], iter + 1);//->list[i]);
-        }
+      // Main values are copied in, now copy each list
+      clone (foo_ptr->list[i], nfp);
+      copy->list[i] = malloc (sizeof (foo));
+      *copy->list[i] = *nfp;
     }
-
-  return result;
 }
 
 /**
@@ -127,29 +114,51 @@ void dump (foo *foo_ptr, int nest)
 }
 
 /**
- * Copy one recursive struct into another
+ * Recurse across the struct and format contents
+ *
+ * @param foo *foo_ptr The pointer to the foo structure
+ * @param int nest The counter for how far to indent
+ * @return void
  */
-void clone (foo *foo_ptr, foo *copy)
+foo powerset (foo *foo_ptr, int iter)
 {
+  int i;
+  foo result;
+
   // Copy our pass in
-  strcpy (copy->key, foo_ptr->key);
-  strcpy (copy->val, foo_ptr->val);
-  copy->type = foo_ptr->type;
-  copy->lsize = 0;
-  copy->iter = 0;
+  strcpy (result.key, foo_ptr->key);
+  strcpy (result.val, foo_ptr->val);
+  result.type = foo_ptr->type;
+  result.lsize = 0;
+  result.iter = 0;
 
-  // Deep copy all the elements
-  for (unsigned i = 0u; i < foo_ptr->lsize;  i++)
+  for (i = 0u; foo_ptr->list[i]; i++)
     {
-      foo nfoo;
-      foo *nfp = &nfoo;
-      copy->lsize++;
+      // Copy the list element over
+      // WOOPS this is linking the elements
+      foo copy;
+      foo *copyp = &copy;
+      clone (foo_ptr->list[i], copyp);
+      result.list[i] = malloc (sizeof (foo));
+      *result.list[i] = *copyp;
+      //result.list[i] = foo_ptr->list[i];
+      result.lsize++;
 
-      // Main values are copied in, now copy each list
-      clone (foo_ptr->list[i], nfp);
-      copy->list[i] = malloc (sizeof (foo));
-      *copy->list[i] = *nfp;
+      // If we have an unkeyed list item, just grab first element and quit matching on others
+      if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
+        {
+          //printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
+          result.list[i + 1] = NULL;
+          foo_ptr->iter = iter;
+          return result;
+        }
+      else if (foo_ptr->list[i]->type == LIST)
+        {
+          *result.list[i] = powerset (foo_ptr->list[i], iter + 1);//->list[i]);
+        }
     }
+
+  return result;
 }
 
 /**
@@ -191,6 +200,9 @@ int main (int argc, char *argv[])
 
   printf ("\n\nLeaving us with:\n");
   dump (foo_ptr, 0);
+
+  printf ("\n\nIn clone:\n");
+  dump (cloned_ptr, 0);
 
   //printf ("Its top value is: %s", cloned_ptr->list[0]->key);
 
