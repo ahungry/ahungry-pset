@@ -134,9 +134,6 @@ void dump (foo *foo_ptr, int nest)
  */
 int main (int argc, char *argv[])
 {
-  //printf ("Running %s, We saw %d args...\n", argv[0], argc);
-  //printf ("Scalar: %d, List: %d", SCALAR, LIST);
-
   // Set up the equivalent of the following PHP array:
   // $arr = ['a' => [1, 2], 'b' => [3, 4]]
   foo a2 = { SCALAR, "\0", "2", { NULL }, 0, 0 };
@@ -147,37 +144,15 @@ int main (int argc, char *argv[])
   foo b = { LIST, "b", "", { &b1, &b2 }, 2, 0 };
   foo foo1 = { LIST, "result", "", { &a, &b }, 2, 0 };
 
-  //printf ("k: %s, v: %s\n", foo1.list[0]->key, foo1.list[0]->val);
-
   foo *foo_ptr = &foo1;
-  //foo result = { LIST, "\0", "", { NULL }, NULL };
-
-  //printf ("Its loopin time\n");
-  //dump (foo_ptr, 0);
-
-  //printf ("Feel the power\n");
   foo result;
+
   result = powerset (foo_ptr, 0);
   dump (&result, 0);
 
   foo result2;
   result2 = powerset (foo_ptr, 0);
   dump (&result2, 0);
-
-  //printf ("K: %s V: %s\n", result.key, result.val);
-
-  /* printf ("Afterwards, we end up with....\n"); */
-  /* printf ("k: %s v: %s\n", result.key, result.val); */
-  /* printf ("rl1 - k: %s v: %s t: %d\n", result.list[0]->key, result.list[0]->val, result.list[0]->type); */
-  /* printf ("rl1a - k: %s v: %s t: %d\n", result.list[0]->list[0]->key, result.list[0]->list[0]->val, result.list[0]->list[0]->type); */
-  /* printf ("rl2 - k: %s v: %s\n", result.list[1]->key, result.list[1]->val); */
-  /* printf ("rl1b - k: %s v: %s\n", result.list[1]->list[0]->key, result.list[1]->list[0]->val); */
-  //dump (&result, 0);
-  //printf ("DUMP 2 TIME\n\n");
-
-  return 0;
-  printf ("Then in the original object...\n");
-  //dump (foo_ptr, 0);
 
   return 0;
 }
