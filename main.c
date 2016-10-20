@@ -62,18 +62,19 @@ foo powerset (foo *foo_ptr, int iter)
   for (i = 0u; foo_ptr->list[i]; i++)
     {
       // Copy the list element over
+      // WOOPS this is linking the elements
       result.list[i] = foo_ptr->list[i];
       result.lsize++;
 
       // If we have an unkeyed list item, just grab first element and quit matching on others
       if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
         {
-          printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
+          //printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
           result.list[i + 1] = NULL;
           foo_ptr->iter = iter;
           return result;
         }
-      else
+      else if (foo_ptr->list[i]->type == LIST)
         {
           *result.list[i] = powerset (foo_ptr->list[i], iter + 1);//->list[i]);
         }
@@ -112,7 +113,7 @@ void dump (foo *foo_ptr, int nest)
 
           if (i + 1 < foo_ptr->lsize)
             {
-              printf (",");
+              printf (", ");
             }
         }
 
@@ -122,6 +123,32 @@ void dump (foo *foo_ptr, int nest)
         }
 
       printf ("}");
+    }
+}
+
+/**
+ * Copy one recursive struct into another
+ */
+void clone (foo *foo_ptr, foo *copy)
+{
+  // Copy our pass in
+  strcpy (copy->key, foo_ptr->key);
+  strcpy (copy->val, foo_ptr->val);
+  copy->type = foo_ptr->type;
+  copy->lsize = 0;
+  copy->iter = 0;
+
+  // Deep copy all the elements
+  for (unsigned i = 0u; i < foo_ptr->lsize;  i++)
+    {
+      foo nfoo;
+      foo *nfp = &nfoo;
+      copy->lsize++;
+
+      // Main values are copied in, now copy each list
+      clone (foo_ptr->list[i], nfp);
+      copy->list[i] = malloc (sizeof (foo));
+      *copy->list[i] = *nfp;
     }
 }
 
@@ -147,12 +174,33 @@ int main (int argc, char *argv[])
   foo *foo_ptr = &foo1;
   foo result;
 
+  printf ("\n\nStart with:\n");
+  dump (foo_ptr, 0);
+
+  foo cloned;
+  foo *cloned_ptr = &cloned;
+  clone (foo_ptr, cloned_ptr);
+
+  printf ("\n\nThen we clone it:\n");
+  dump (cloned_ptr, 0);
+
   result = powerset (foo_ptr, 0);
+
+  printf ("\n\nGenerates result:\n");
   dump (&result, 0);
+
+  printf ("\n\nLeaving us with:\n");
+  dump (foo_ptr, 0);
+
+  //printf ("Its top value is: %s", cloned_ptr->list[0]->key);
+
+  printf ("\n\n");
+  return 0;
 
   foo result2;
   result2 = powerset (foo_ptr, 0);
   dump (&result2, 0);
+
 
   return 0;
 }
