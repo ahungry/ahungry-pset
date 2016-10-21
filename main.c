@@ -197,7 +197,7 @@ foo powerset (foo *foo_ptr, int *found)
   return result;
 }
 
-void deviations (foo *foo_ptr)
+void deviations (foo *foo_ptr, int *comma)
 {
   foo result;
   int found = 1;
@@ -224,11 +224,17 @@ void deviations (foo *foo_ptr)
 
       if (canExpand == 1)
         {
-          deviations (cloned_ptr);
+          deviations (cloned_ptr, comma);
         }
       else
         {
-          printf (",\n");
+          if (*comma)
+            {
+              printf (",");
+            }
+
+          *comma = 1;
+          printf ("\n");
           dump (cloned_ptr, 0);
         }
     }
@@ -253,15 +259,17 @@ int main (int argc, char *argv[])
   foo b1 = { SCALAR, "\0", "3", { NULL }, 0, 0 };
   foo a = { LIST, "a", "", { &a1, &a2 }, 2, 0 };
   foo b = { LIST, "b", "", { &b1, &b2 }, 2, 0 };
-  foo foo1 = { LIST, "result", "", { &a, &b }, 2, 0 };
+  foo foo1 = { LIST, "data", "", { &a, &b }, 2, 0 };
 
   // Set up while loop variables
   foo *foo_ptr = &foo1;
+  int comma = 0;
 
-  printf ("{\"original\":");
+  printf ("{\"original\": ");
   dump (foo_ptr, 0);
-  deviations (foo_ptr);
-  printf ("}\n");
+  printf (",\n\"deviations\": [");
+  deviations (foo_ptr, &comma);
+  printf ("]}\n");
 
   return 0;
 }
