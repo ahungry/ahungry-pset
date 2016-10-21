@@ -56,7 +56,7 @@ void clone (foo *foo_ptr, foo *copy)
   strcpy (copy->val, foo_ptr->val);
   copy->type = foo_ptr->type;
   copy->lsize = 0;
-  copy->iter = 0;
+  copy->iter = foo_ptr->iter;
 
   // Deep copy all the elements
   for (unsigned i = 0u; i < foo_ptr->lsize;  i++)
@@ -133,6 +133,12 @@ void hasArray (foo *foo_ptr, int *found)
           && strlen (foo_ptr->list[i]->key) == 0 // Only expand on plain array elements
           && foo_ptr->list[i + 1])               // Ensure we have a next element before expanding to this one
         {
+          printf ("hasArray found match at value: %s with i: %d and lsize: %d\n",
+                  foo_ptr->list[i]->val,
+                  i,
+                  foo_ptr->lsize
+                  );
+
           *found = 1;
           return;
         }
@@ -162,7 +168,7 @@ foo powerset (foo *foo_ptr, int *found)
   strcpy (result.val, foo_ptr->val);
   result.type = foo_ptr->type;
   result.lsize = 0;
-  result.iter = 0;
+  result.iter = foo_ptr->iter;
 
   int j;
   for (i = foo_ptr->iter, j = 0; i < (int) foo_ptr->lsize; i++, j++)//foo_ptr->list[i]; i++)
@@ -182,6 +188,7 @@ foo powerset (foo *foo_ptr, int *found)
           && !*found)                            // Stop after first expansion
         {
           foo_ptr->iter++;
+          result.iter++;
           *found = 1;
           return result;
         }
@@ -192,6 +199,56 @@ foo powerset (foo *foo_ptr, int *found)
     }
 
   return result;
+}
+
+void deviations (foo *foo_ptr)
+{
+  foo result;
+  int found = 1;
+  int canExpand = 0;
+  int while_iter = 0;
+  foo cloned;
+  foo *cloned_ptr = &cloned;
+
+  //printf ("\n\nENTER DEVIATION...\n\n");
+
+  while (found && while_iter++ < 20)
+    {
+      // Avoid eating all the cpu
+      usleep (1000); // 1ms
+
+      //printf ("\n\nBegin to expand:\n");
+      //dump (foo_ptr, 0);
+
+      found = 0;
+      //canExpand = 0;
+      result = powerset (foo_ptr, &found);
+
+      //printf ("\nExpanded to:\n");
+      //dump (&result, 0);
+
+      //deviations (&result);
+      canExpand = 0;
+      clone (&result, cloned_ptr);
+      hasArray (cloned_ptr, &canExpand);
+
+      if (canExpand == 1)
+        {
+          deviations (cloned_ptr);
+          //printf ("We could expand our result set....\n");
+        }
+      else
+        {
+          //printf ("NO FURTHER EXPANSION:\n");
+          printf ("\n");
+          dump (cloned_ptr, 0);
+        }
+
+      // Copy result into foo_ptr
+      //clone (&result, foo_ptr);
+    }
+
+  return;
 }
 
 /**
@@ -215,35 +272,7 @@ int main (int argc, char *argv[])
 
   // Set up while loop variables
   foo *foo_ptr = &foo1;
-  foo result;
-  int canExpand = 1;
-  int found;
-  int while_iter = 0;
-
-  while (found && while_iter++ < 20)
-    {
-      // Avoid eating all the cpu
-      //usleep (1000); // 1ms
-
-      printf ("\n\nBegin to expand:\n");
-      dump (foo_ptr, 0);
-
-      found = 0;
-      canExpand = 0;
-      result = powerset (foo_ptr, &found);
-      hasArray (&result, &canExpand);
-
-      if (canExpand == 1)
-        {
-          printf ("We could expand our result set....\n");
-        }
-
-      printf ("\nExpanded to:\n");
-      dump (&result, 0);
-
-      // Copy result into foo_ptr
-      //clone (&result, foo_ptr);
-    }
+  deviations (foo_ptr);
 
   printf ("OK\n");
 
