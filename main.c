@@ -33,44 +33,44 @@ enum
 /**
  * Type allows us to have named keys, and values or lists
  */
-typedef struct foo
+typedef struct puny_hash
 {
   short type;
   char key[64];
   char val[64];
-  struct foo *list[5];
+  struct puny_hash *list[5];
   size_t lsize;
   int iter;
-} foo;
+} PunyHash;
 
-void clone (foo *foo_ptr, foo *copy);
-void deviations (foo *foo_ptr, int *comma);
-void dump (foo *foo_ptr, int nest);
-void hasArray (foo *foo_ptr, int *found);
-foo powerset (foo *foo_ptr, int *found);
+void clone (PunyHash *puny_hash_ptr, PunyHash *copy);
+void deviations (PunyHash *puny_hash_ptr, int *comma);
+void dump (PunyHash *puny_hash_ptr, int nest);
+void hasArray (PunyHash *puny_hash_ptr, int *found);
+PunyHash powerset (PunyHash *puny_hash_ptr, int *found);
 
 /**
  * Copy one recursive struct into another
  */
-void clone (foo *foo_ptr, foo *copy)
+void clone (PunyHash *puny_hash_ptr, PunyHash *copy)
 {
   // Copy our pass in
-  strcpy (copy->key, foo_ptr->key);
-  strcpy (copy->val, foo_ptr->val);
-  copy->type = foo_ptr->type;
+  strcpy (copy->key, puny_hash_ptr->key);
+  strcpy (copy->val, puny_hash_ptr->val);
+  copy->type = puny_hash_ptr->type;
   copy->lsize = 0;
-  copy->iter = 0;//foo_ptr->iter;
+  copy->iter = 0;//puny_hash_ptr->iter;
 
   // Deep copy all the elements
-  for (unsigned i = 0u; i < foo_ptr->lsize;  i++)
+  for (unsigned i = 0u; i < puny_hash_ptr->lsize;  i++)
     {
-      foo nfoo;
-      foo *nfp = &nfoo;
+      PunyHash npuny_hash;
+      PunyHash *nfp = &npuny_hash;
       copy->lsize++;
 
       // Main values are copied in, now copy each list
-      clone (foo_ptr->list[i], nfp);
-      copy->list[i] = malloc (sizeof (foo));
+      clone (puny_hash_ptr->list[i], nfp);
+      copy->list[i] = malloc (sizeof (PunyHash));
       *copy->list[i] = *nfp;
     }
 }
@@ -78,18 +78,18 @@ void clone (foo *foo_ptr, foo *copy)
 /**
  * Generate all possible deviations of the powerset
  *
- * @param foo *foo_ptr The foo pointer reference
+ * @param puny_hash *puny_hash_ptr The puny_hash pointer reference
  * @param int *comma If we want to track a comma or not
  * @return void
  */
-void deviations (foo *foo_ptr, int *comma)
+void deviations (PunyHash *puny_hash_ptr, int *comma)
 {
-  foo result;
+  PunyHash result;
   int found = 1;
   int canExpand = 0;
   int while_iter = 0;
-  foo cloned;
-  foo *cloned_ptr = &cloned;
+  PunyHash cloned;
+  PunyHash *cloned_ptr = &cloned;
 
   //printf ("\n\nENTER DEVIATION...\n\n");
 
@@ -101,7 +101,7 @@ void deviations (foo *foo_ptr, int *comma)
       usleep (1); // Almost non-existent sleep interval
 
       found = 0;
-      result = powerset (foo_ptr, &found);
+      result = powerset (puny_hash_ptr, &found);
 
       canExpand = 0;
       clone (&result, cloned_ptr);
@@ -134,34 +134,34 @@ void deviations (foo *foo_ptr, int *comma)
  * @param int nest The counter for how far to indent
  * @return void
  */
-void dump (foo *foo_ptr, int nest)
+void dump (PunyHash *puny_hash_ptr, int nest)
 {
-  if (foo_ptr->type == SCALAR)
+  if (puny_hash_ptr->type == SCALAR)
     {
-      printf ("\"%s\"", foo_ptr->val);
+      printf ("\"%s\"", puny_hash_ptr->val);
     }
 
-  if (foo_ptr->type == LIST)
+  if (puny_hash_ptr->type == LIST)
     {
       //printf ("{");
-      printf ("{\"%s\": ", foo_ptr->key);
+      printf ("{\"%s\": ", puny_hash_ptr->key);
 
-      if (foo_ptr->lsize > 1)
+      if (puny_hash_ptr->lsize > 1)
         {
           printf ("[");
         }
 
-      for (unsigned i = 0; i < foo_ptr->lsize; i++)
+      for (unsigned i = 0; i < puny_hash_ptr->lsize; i++)
         {
-          dump (foo_ptr->list[i], nest * 1 + 2);
+          dump (puny_hash_ptr->list[i], nest * 1 + 2);
 
-          if (i + 1 < foo_ptr->lsize)
+          if (i + 1 < puny_hash_ptr->lsize)
             {
               printf (", ");
             }
         }
 
-      if (foo_ptr->lsize > 1)
+      if (puny_hash_ptr->lsize > 1)
         {
           printf ("]");
         }
@@ -177,23 +177,23 @@ void dump (foo *foo_ptr, int nest)
  * @param int *found If we found a match to reduce on
  * @return void
  */
-void hasArray (foo *foo_ptr, int *found)
+void hasArray (PunyHash *puny_hash_ptr, int *found)
 {
   int i, j;
 
-  for (i = foo_ptr->iter, j = 0; i < (int) foo_ptr->lsize; i++, j++)
+  for (i = puny_hash_ptr->iter, j = 0; i < (int) puny_hash_ptr->lsize; i++, j++)
     {
       // If we have an unkeyed list item, we have a plain array found and can expand on it
-      if (foo_ptr->list[i]->type == SCALAR       // Only plain scalars expand
-          && strlen (foo_ptr->list[i]->key) == 0 // Only expand on plain array elements
-          && foo_ptr->list[i + 1])               // Ensure we have a next element before expanding to this one
+      if (puny_hash_ptr->list[i]->type == SCALAR       // Only plain scalars expand
+          && strlen (puny_hash_ptr->list[i]->key) == 0 // Only expand on plain array elements
+          && puny_hash_ptr->list[i + 1])               // Ensure we have a next element before expanding to this one
         {
           *found = 1;
           return;
         }
-      else if (foo_ptr->list[i]->type == LIST)
+      else if (puny_hash_ptr->list[i]->type == LIST)
         {
-          hasArray (foo_ptr->list[i], found);
+          hasArray (puny_hash_ptr->list[i], found);
         }
     }
 
@@ -207,43 +207,43 @@ void hasArray (foo *foo_ptr, int *found)
  * @param int *found If we found a match to reduce on
  * @return void
  */
-foo powerset (foo *foo_ptr, int *found)
+PunyHash powerset (PunyHash *puny_hash_ptr, int *found)
 {
   int i;
-  foo result;
+  PunyHash result;
 
   // Copy our pass in
-  strcpy (result.key, foo_ptr->key);
-  strcpy (result.val, foo_ptr->val);
-  result.type = foo_ptr->type;
+  strcpy (result.key, puny_hash_ptr->key);
+  strcpy (result.val, puny_hash_ptr->val);
+  result.type = puny_hash_ptr->type;
   result.lsize = 0;
-  result.iter = foo_ptr->iter;
+  result.iter = puny_hash_ptr->iter;
 
   int j;
-  for (i = foo_ptr->iter, j = 0; i < (int) foo_ptr->lsize; i++, j++)//foo_ptr->list[i]; i++)
+  for (i = puny_hash_ptr->iter, j = 0; i < (int) puny_hash_ptr->lsize; i++, j++)//puny_hash_ptr->list[i]; i++)
     {
       // Copy the list element over
-      foo copy;
-      foo *copyp = &copy;
-      clone (foo_ptr->list[i], copyp);
-      result.list[j] = malloc (sizeof (foo));
+      PunyHash copy;
+      PunyHash *copyp = &copy;
+      clone (puny_hash_ptr->list[i], copyp);
+      result.list[j] = malloc (sizeof (PunyHash));
       *result.list[j] = *copyp;
       result.lsize++;
 
       // If we have an unkeyed list item, just grab first element and quit matching on others
-      if (foo_ptr->list[i]->type == SCALAR       // Only plain scalars expand
-          && strlen (foo_ptr->list[i]->key) == 0 // Only expand on plain array elements
-          && foo_ptr->list[i + 1]                // Ensure we have a next element before expanding to this one
+      if (puny_hash_ptr->list[i]->type == SCALAR       // Only plain scalars expand
+          && strlen (puny_hash_ptr->list[i]->key) == 0 // Only expand on plain array elements
+          && puny_hash_ptr->list[i + 1]                // Ensure we have a next element before expanding to this one
           && !*found)                            // Stop after first expansion
         {
-          foo_ptr->iter++;
+          puny_hash_ptr->iter++;
           result.iter++;
           *found = 1;
           return result;
         }
-      else if (foo_ptr->list[i]->type == LIST)
+      else if (puny_hash_ptr->list[i]->type == LIST)
         {
-          *result.list[j] = powerset (foo_ptr->list[i], found);//->list[i]);
+          *result.list[j] = powerset (puny_hash_ptr->list[i], found);//->list[i]);
         }
     }
 
@@ -259,24 +259,32 @@ foo powerset (foo *foo_ptr, int *found)
  */
 int main (int argc, char *argv[])
 {
+  if (argc > 1)
+    {
+      printf ("Invalid option: '%s'\n\n", argv[1]);
+      printf ("Usage: No support for input yet, just run the command...\n");
+
+      return 1;
+    }
+
   // Set up the equivalent of the following PHP array:
   // $arr = ['a' => [1, 2], 'b' => [3, 4]]
-  foo a2 = { SCALAR, "\0", "2", { NULL }, 0, 0 };
-  foo a1 = { SCALAR, "\0", "1", { NULL }, 0, 0 };
-  foo b2 = { SCALAR, "\0", "4", { NULL }, 0, 0 };
-  foo b1 = { SCALAR, "\0", "3", { NULL }, 0, 0 };
-  foo a = { LIST, "a", "", { &a1, &a2 }, 2, 0 };
-  foo b = { LIST, "b", "", { &b1, &b2 }, 2, 0 };
-  foo foo1 = { LIST, "data", "", { &a, &b }, 2, 0 };
+  PunyHash a2 = { SCALAR, "\0", "2", { NULL }, 0, 0 };
+  PunyHash a1 = { SCALAR, "\0", "1", { NULL }, 0, 0 };
+  PunyHash b2 = { SCALAR, "\0", "4", { NULL }, 0, 0 };
+  PunyHash b1 = { SCALAR, "\0", "3", { NULL }, 0, 0 };
+  PunyHash a = { LIST, "a", "", { &a1, &a2 }, 2, 0 };
+  PunyHash b = { LIST, "b", "", { &b1, &b2 }, 2, 0 };
+  PunyHash puny_hash1 = { LIST, "data", "", { &a, &b }, 2, 0 };
 
   // Set up while loop variables
-  foo *foo_ptr = &foo1;
+  PunyHash *puny_hash_ptr = &puny_hash1;
   int comma = 0;
 
   printf ("{\"original\": ");
-  dump (foo_ptr, 0);
+  dump (puny_hash_ptr, 0);
   printf (",\n\"deviations\": [");
-  deviations (foo_ptr, &comma);
+  deviations (puny_hash_ptr, &comma);
   printf ("]}\n");
 
   return 0;
