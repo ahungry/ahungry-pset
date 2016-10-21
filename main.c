@@ -173,10 +173,11 @@ foo powerset (foo *foo_ptr, int *found)
       result.lsize++;
 
       // If we have an unkeyed list item, just grab first element and quit matching on others
-      if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0 && !*found)
+      if (foo_ptr->list[i]->type == SCALAR       // Only plain scalars expand
+          && strlen (foo_ptr->list[i]->key) == 0 // Only expand on plain array elements
+          && foo_ptr->list[i + 1]                // Ensure we have a next element before expanding to this one
+          && !*found)                            // Stop after first expansion
         {
-          //printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
-          //printf ("FOUND ITER : %d\n", foo_ptr->iter);
           foo_ptr->iter++;
           *found = 1;
           return result;
@@ -241,8 +242,13 @@ int main (int argc, char *argv[])
   printf ("\n\nSecond result set:\n");
   dump (&result2, 0);
 
+  foo result3;
+  found = 0;
+  result3 = powerset (foo_ptr, &found);
+  dump (&result3, 0);
+
   int hadArray = 0;
-  hasArray (&result2, &hadArray);
+  hasArray (&result3, &hadArray);
   printf ("Could expand further? %d\n", hadArray);
 
   return 0;
