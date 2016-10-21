@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#define MAX_WHILE_NEST 20
+
 /**
  * Better way to track our foo.type than comparing strings
  */
@@ -56,7 +58,7 @@ void clone (foo *foo_ptr, foo *copy)
   strcpy (copy->val, foo_ptr->val);
   copy->type = foo_ptr->type;
   copy->lsize = 0;
-  copy->iter = foo_ptr->iter;
+  copy->iter = 0;//foo_ptr->iter;
 
   // Deep copy all the elements
   for (unsigned i = 0u; i < foo_ptr->lsize;  i++)
@@ -133,12 +135,6 @@ void hasArray (foo *foo_ptr, int *found)
           && strlen (foo_ptr->list[i]->key) == 0 // Only expand on plain array elements
           && foo_ptr->list[i + 1])               // Ensure we have a next element before expanding to this one
         {
-          printf ("hasArray found match at value: %s with i: %d and lsize: %d\n",
-                  foo_ptr->list[i]->val,
-                  i,
-                  foo_ptr->lsize
-                  );
-
           *found = 1;
           return;
         }
@@ -212,22 +208,16 @@ void deviations (foo *foo_ptr)
 
   //printf ("\n\nENTER DEVIATION...\n\n");
 
-  while (found && while_iter++ < 20)
+  while (found && while_iter++ < MAX_WHILE_NEST)
     {
-      // Avoid eating all the cpu
-      usleep (1000); // 1ms
-
-      //printf ("\n\nBegin to expand:\n");
-      //dump (foo_ptr, 0);
+      // Ok, some weird timing issue - without this, it infinitely
+      // loops, so I'm probably missing something with memory
+      // management to avoid a conflict in it.
+      usleep (1); // 1ms
 
       found = 0;
-      //canExpand = 0;
       result = powerset (foo_ptr, &found);
 
-      //printf ("\nExpanded to:\n");
-      //dump (&result, 0);
-
-      //deviations (&result);
       canExpand = 0;
       clone (&result, cloned_ptr);
       hasArray (cloned_ptr, &canExpand);
@@ -235,17 +225,12 @@ void deviations (foo *foo_ptr)
       if (canExpand == 1)
         {
           deviations (cloned_ptr);
-          //printf ("We could expand our result set....\n");
         }
       else
         {
-          //printf ("NO FURTHER EXPANSION:\n");
-          printf ("\n");
+          printf (",\n");
           dump (cloned_ptr, 0);
         }
-
-      // Copy result into foo_ptr
-      //clone (&result, foo_ptr);
     }
 
   return;
@@ -272,9 +257,11 @@ int main (int argc, char *argv[])
 
   // Set up while loop variables
   foo *foo_ptr = &foo1;
-  deviations (foo_ptr);
 
-  printf ("OK\n");
+  printf ("{\"original\":");
+  dump (foo_ptr, 0);
+  deviations (foo_ptr);
+  printf ("}\n");
 
   return 0;
 }
