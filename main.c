@@ -42,7 +42,8 @@ typedef struct foo
 
 void clone (foo *foo_ptr, foo *copy);
 void dump (foo *foo_ptr, int nest);
-foo powerset (foo *foo_ptr);
+void hasArray (foo *foo_ptr, int *found);
+foo powerset (foo *foo_ptr, int *found);
 
 /**
  * Copy one recursive struct into another
@@ -114,13 +115,41 @@ void dump (foo *foo_ptr, int nest)
 }
 
 /**
+ * Recurse into struct to see if a node has a multi-endpoint
+ *
+ * @param foo *foo_ptr The pointer to the foo structure
+ * @param int *found If we found a match to reduce on
+ * @return void
+ */
+void hasArray (foo *foo_ptr, int *found)
+{
+  int i, j;
+
+  for (i = foo_ptr->iter, j = 0; i < (int) foo_ptr->lsize; i++, j++)
+    {
+      // If we have an unkeyed list item, we have a plain array found and can expand on it
+      if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
+        {
+          *found = 1;
+          return;
+        }
+      else if (foo_ptr->list[i]->type == LIST)
+        {
+          hasArray (foo_ptr->list[i], found);
+        }
+    }
+
+  return;
+}
+
+/**
  * Recurse across the struct and format contents
  *
  * @param foo *foo_ptr The pointer to the foo structure
- * @param int nest The counter for how far to indent
+ * @param int *found If we found a match to reduce on
  * @return void
  */
-foo powerset (foo *foo_ptr)
+foo powerset (foo *foo_ptr, int *found)
 {
   int i;
   foo result;
@@ -144,16 +173,17 @@ foo powerset (foo *foo_ptr)
       result.lsize++;
 
       // If we have an unkeyed list item, just grab first element and quit matching on others
-      if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
+      if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0 && !*found)
         {
           //printf ("linking pher value (%s) here...\n", foo_ptr->list[i]->val);
           //printf ("FOUND ITER : %d\n", foo_ptr->iter);
           foo_ptr->iter++;
+          *found = 1;
           return result;
         }
       else if (foo_ptr->list[i]->type == LIST)
         {
-          *result.list[j] = powerset (foo_ptr->list[i]);//->list[i]);
+          *result.list[j] = powerset (foo_ptr->list[i], found);//->list[i]);
         }
     }
 
@@ -192,7 +222,8 @@ int main (int argc, char *argv[])
   printf ("\n\nThen we clone it:\n");
   dump (cloned_ptr, 0);
 
-  result = powerset (foo_ptr);
+  int found = 0;
+  result = powerset (foo_ptr, &found);
 
   printf ("\n\nGenerates result:\n");
   dump (&result, 0);
@@ -204,10 +235,15 @@ int main (int argc, char *argv[])
   dump (cloned_ptr, 0);
 
   foo result2;
-  result2 = powerset (foo_ptr);
+  found = 0;
+  result2 = powerset (foo_ptr, &found);
 
   printf ("\n\nSecond result set:\n");
   dump (&result2, 0);
+
+  int hadArray = 0;
+  hasArray (&result2, &hadArray);
+  printf ("Could expand further? %d\n", hadArray);
 
   return 0;
 }
