@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 /**
  * Better way to track our foo.type than comparing strings
@@ -128,7 +129,9 @@ void hasArray (foo *foo_ptr, int *found)
   for (i = foo_ptr->iter, j = 0; i < (int) foo_ptr->lsize; i++, j++)
     {
       // If we have an unkeyed list item, we have a plain array found and can expand on it
-      if (foo_ptr->list[i]->type == SCALAR && strlen (foo_ptr->list[i]->key) == 0)
+      if (foo_ptr->list[i]->type == SCALAR       // Only plain scalars expand
+          && strlen (foo_ptr->list[i]->key) == 0 // Only expand on plain array elements
+          && foo_ptr->list[i + 1])               // Ensure we have a next element before expanding to this one
         {
           *found = 1;
           return;
@@ -210,46 +213,39 @@ int main (int argc, char *argv[])
   foo b = { LIST, "b", "", { &b1, &b2 }, 2, 0 };
   foo foo1 = { LIST, "result", "", { &a, &b }, 2, 0 };
 
+  // Set up while loop variables
   foo *foo_ptr = &foo1;
   foo result;
+  int canExpand = 1;
+  int found;
+  int while_iter = 0;
 
-  printf ("\n\nStart with:\n");
-  dump (foo_ptr, 0);
+  while (found && while_iter++ < 20)
+    {
+      // Avoid eating all the cpu
+      //usleep (1000); // 1ms
 
-  foo cloned;
-  foo *cloned_ptr = &cloned;
-  clone (foo_ptr, cloned_ptr);
+      printf ("\n\nBegin to expand:\n");
+      dump (foo_ptr, 0);
 
-  printf ("\n\nThen we clone it:\n");
-  dump (cloned_ptr, 0);
+      found = 0;
+      canExpand = 0;
+      result = powerset (foo_ptr, &found);
+      hasArray (&result, &canExpand);
 
-  int found = 0;
-  result = powerset (foo_ptr, &found);
+      if (canExpand == 1)
+        {
+          printf ("We could expand our result set....\n");
+        }
 
-  printf ("\n\nGenerates result:\n");
-  dump (&result, 0);
+      printf ("\nExpanded to:\n");
+      dump (&result, 0);
 
-  printf ("\n\nLeaving us with:\n");
-  dump (foo_ptr, 0);
+      // Copy result into foo_ptr
+      //clone (&result, foo_ptr);
+    }
 
-  printf ("\n\nIn clone:\n");
-  dump (cloned_ptr, 0);
-
-  foo result2;
-  found = 0;
-  result2 = powerset (foo_ptr, &found);
-
-  printf ("\n\nSecond result set:\n");
-  dump (&result2, 0);
-
-  foo result3;
-  found = 0;
-  result3 = powerset (foo_ptr, &found);
-  dump (&result3, 0);
-
-  int hadArray = 0;
-  hasArray (&result3, &hadArray);
-  printf ("Could expand further? %d\n", hadArray);
+  printf ("OK\n");
 
   return 0;
 }
