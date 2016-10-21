@@ -44,6 +44,7 @@ typedef struct foo
 } foo;
 
 void clone (foo *foo_ptr, foo *copy);
+void deviations (foo *foo_ptr, int *comma);
 void dump (foo *foo_ptr, int nest);
 void hasArray (foo *foo_ptr, int *found);
 foo powerset (foo *foo_ptr, int *found);
@@ -72,6 +73,58 @@ void clone (foo *foo_ptr, foo *copy)
       copy->list[i] = malloc (sizeof (foo));
       *copy->list[i] = *nfp;
     }
+}
+
+/**
+ * Generate all possible deviations of the powerset
+ *
+ * @param foo *foo_ptr The foo pointer reference
+ * @param int *comma If we want to track a comma or not
+ * @return void
+ */
+void deviations (foo *foo_ptr, int *comma)
+{
+  foo result;
+  int found = 1;
+  int canExpand = 0;
+  int while_iter = 0;
+  foo cloned;
+  foo *cloned_ptr = &cloned;
+
+  //printf ("\n\nENTER DEVIATION...\n\n");
+
+  while (found && while_iter++ < MAX_WHILE_NEST)
+    {
+      // Ok, some weird timing issue - without this, it infinitely
+      // loops, so I'm probably missing something with memory
+      // management to avoid a conflict in it.
+      usleep (1); // Almost non-existent sleep interval
+
+      found = 0;
+      result = powerset (foo_ptr, &found);
+
+      canExpand = 0;
+      clone (&result, cloned_ptr);
+      hasArray (cloned_ptr, &canExpand);
+
+      if (canExpand == 1)
+        {
+          deviations (cloned_ptr, comma);
+        }
+      else
+        {
+          if (*comma)
+            {
+              printf (",");
+            }
+
+          *comma = 1;
+          printf ("\n");
+          dump (cloned_ptr, 0);
+        }
+    }
+
+  return;
 }
 
 /**
@@ -195,51 +248,6 @@ foo powerset (foo *foo_ptr, int *found)
     }
 
   return result;
-}
-
-void deviations (foo *foo_ptr, int *comma)
-{
-  foo result;
-  int found = 1;
-  int canExpand = 0;
-  int while_iter = 0;
-  foo cloned;
-  foo *cloned_ptr = &cloned;
-
-  //printf ("\n\nENTER DEVIATION...\n\n");
-
-  while (found && while_iter++ < MAX_WHILE_NEST)
-    {
-      // Ok, some weird timing issue - without this, it infinitely
-      // loops, so I'm probably missing something with memory
-      // management to avoid a conflict in it.
-      usleep (1); // 1ms
-
-      found = 0;
-      result = powerset (foo_ptr, &found);
-
-      canExpand = 0;
-      clone (&result, cloned_ptr);
-      hasArray (cloned_ptr, &canExpand);
-
-      if (canExpand == 1)
-        {
-          deviations (cloned_ptr, comma);
-        }
-      else
-        {
-          if (*comma)
-            {
-              printf (",");
-            }
-
-          *comma = 1;
-          printf ("\n");
-          dump (cloned_ptr, 0);
-        }
-    }
-
-  return;
 }
 
 /**
